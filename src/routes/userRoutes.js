@@ -1,11 +1,14 @@
 const express = require("express");
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 const {
   getMyProfile,
   updateMyProfile,
+  listPendingUsers,
+  getUserById,
+  reviewUser,
 } = require("../controllers/userController");
-const { auth } = require("../middleware/auth");
+const { auth, requireRoles } = require("../middleware/auth");
 const { validate } = require("../middleware/validate");
 
 const router = express.Router();
@@ -24,6 +27,28 @@ router.patch(
   ],
   validate,
   updateMyProfile,
+);
+
+router.get("/pending", requireRoles("admin"), listPendingUsers);
+
+router.get(
+  "/:userId",
+  requireRoles("admin"),
+  [param("userId").isMongoId()],
+  validate,
+  getUserById,
+);
+
+router.patch(
+  "/:userId/review",
+  requireRoles("admin"),
+  [
+    param("userId").isMongoId(),
+    body("action").isIn(["approve", "ban"]),
+    body("note").optional().trim().isLength({ max: 500 }),
+  ],
+  validate,
+  reviewUser,
 );
 
 module.exports = router;

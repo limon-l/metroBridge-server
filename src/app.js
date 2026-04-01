@@ -18,12 +18,30 @@ const conversationRoutes = require("./routes/conversationRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const statsRoutes = require("./routes/statsRoutes");
 
 const app = express();
 
+const allowedOrigins = new Set([
+  env.clientUrl,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5175",
+]);
+
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   }),
 );
@@ -60,6 +78,7 @@ app.use("/api/conversations", conversationRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/stats", statsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
