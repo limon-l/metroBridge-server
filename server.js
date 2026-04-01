@@ -1,0 +1,41 @@
+require("dotenv").config();
+
+const http = require("http");
+const app = require("./src/app");
+const { connectDatabase } = require("./src/config/database");
+const { logger } = require("./src/config/logger");
+const { env } = require("./src/config/env");
+
+const server = http.createServer(app);
+
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    logger.error(
+      `Port ${env.port} is already in use. Stop the existing process or change PORT in .env.`,
+    );
+    process.exit(1);
+  }
+
+  logger.error("Server runtime error", error);
+  process.exit(1);
+});
+
+const startServer = async () => {
+  try {
+    await connectDatabase();
+
+    server.listen(env.port, () => {
+      logger.info(`API running on http://localhost:${env.port}`);
+    });
+  } catch (error) {
+    logger.error("Server startup failed", error);
+    process.exit(1);
+  }
+};
+
+process.on("SIGINT", () => {
+  logger.info("SIGINT received, shutting down gracefully.");
+  server.close(() => process.exit(0));
+});
+
+startServer();
