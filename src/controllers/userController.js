@@ -1,6 +1,9 @@
 const User = require("../models/User");
 const { asyncHandler } = require("../utils/helpers");
 
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const getMyProfile = asyncHandler(async (req, res) => {
   return res.status(200).json({ data: req.user });
 });
@@ -56,6 +59,42 @@ const listPendingUsers = asyncHandler(async (req, res) => {
   return res.status(200).json({ data: users });
 });
 
+const listApprovedUsers = asyncHandler(async (req, res) => {
+  const { q, department, role, bloodGroup } = req.query;
+
+  const filter = {
+    approvalStatus: "approved",
+    role: { $in: ["student", "mentor"] },
+  };
+
+  if (role && ["student", "mentor"].includes(role)) {
+    filter.role = role;
+  }
+
+  if (department) {
+    filter.department = { $regex: escapeRegex(department), $options: "i" };
+  }
+
+  if (bloodGroup) {
+    filter.bloodGroup = bloodGroup;
+  }
+
+  if (q) {
+    filter.$or = [
+      { fullName: { $regex: q, $options: "i" } },
+      { universityId: { $regex: q, $options: "i" } },
+    ];
+  }
+
+  const users = await User.find(filter)
+    .select(
+      "fullName email role department universityId bloodGroup batch section shift phone approvalStatus createdAt",
+    )
+    .sort({ fullName: 1 });
+
+  return res.status(200).json({ data: users });
+});
+
 const getUserById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.userId).select("-password");
   if (!user) {
@@ -99,6 +138,7 @@ module.exports = {
   getMyProfile,
   updateMyProfile,
   listPendingUsers,
+  listApprovedUsers,
   getUserById,
   reviewUser,
 };

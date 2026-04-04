@@ -5,6 +5,7 @@ const {
   getMyProfile,
   updateMyProfile,
   listPendingUsers,
+  listApprovedUsers,
   getUserById,
   reviewUser,
 } = require("../controllers/userController");
@@ -30,6 +31,7 @@ router.patch(
 );
 
 router.get("/pending", requireRoles("admin"), listPendingUsers);
+router.get("/approved", requireRoles("admin"), listApprovedUsers);
 
 router.get(
   "/:userId",

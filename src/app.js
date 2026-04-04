@@ -19,6 +19,7 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const statsRoutes = require("./routes/statsRoutes");
+const connectionRoutes = require("./routes/connectionRoutes");
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/connections", connectionRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
