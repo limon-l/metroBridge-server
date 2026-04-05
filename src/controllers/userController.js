@@ -52,7 +52,7 @@ const listPendingUsers = asyncHandler(async (req, res) => {
 
   const users = await User.find(filter)
     .select(
-      "fullName email role department universityId batch section shift phone createdAt",
+      "fullName email role department universityId batch section shift phone bloodGroup createdAt",
     )
     .sort({ createdAt: -1 });
 
