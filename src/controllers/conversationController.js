@@ -2,6 +2,7 @@ const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 const { asyncHandler } = require("../utils/helpers");
 const { createNotificationsBulk } = require("../utils/notifications");
+const { emitMessageCreated } = require("../realtime/socket");
 
 const listConversations = asyncHandler(async (req, res) => {
   const conversations = await Conversation.find({ participants: req.user._id })
@@ -85,6 +86,19 @@ const sendMessage = asyncHandler(async (req, res) => {
       entityId: conversation._id,
     })),
   );
+
+  emitMessageCreated({
+    conversationId: conversation._id,
+    recipientIds,
+    message: {
+      ...message.toObject(),
+      id: message._id.toString(),
+      senderId: req.user._id.toString(),
+      senderName: req.user.fullName,
+      text: message.content,
+      timestamp: message.createdAt,
+    },
+  });
 
   return res.status(201).json({ data: message });
 });

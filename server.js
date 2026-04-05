@@ -5,8 +5,10 @@ const app = require("./src/app");
 const { connectDatabase } = require("./src/config/database");
 const { logger } = require("./src/config/logger");
 const { env } = require("./src/config/env");
+const { createSocketServer } = require("./src/realtime/socket");
 
 const server = http.createServer(app);
+createSocketServer(server);
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
