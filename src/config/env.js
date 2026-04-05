@@ -5,6 +5,13 @@ const env = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
+  clientUrls: [
+    process.env.CLIENT_URL || "http://localhost:5173",
+    ...(process.env.CLIENT_URLS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  ],
 };
 
 const required = ["mongoUri", "jwtSecret"];
