@@ -4,9 +4,19 @@ const env = {
   mongoUri: process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
+  clientUrl:
+    process.env.CLIENT_URL ||
+    (process.env.NODE_ENV === "production"
+      ? "https://metro-bridge.vercel.app"
+      : "http://localhost:5173"),
   clientUrls: [
-    process.env.CLIENT_URL || "http://localhost:5173",
+    process.env.CLIENT_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "https://metro-bridge.vercel.app"
+        : "http://localhost:5173"),
+    ...(process.env.NODE_ENV === "production"
+      ? ["https://metro-bridge.vercel.app"]
+      : []),
     ...(process.env.CLIENT_URLS || "")
       .split(",")
       .map((origin) => origin.trim())
