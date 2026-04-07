@@ -6,6 +6,7 @@ const {
   sendConnectionRequest,
   listConnectionRequests,
   respondToConnectionRequest,
+  cancelConnectionRequest,
   getMemberProfile,
   disconnectMember,
   reportMember,
@@ -49,6 +50,13 @@ router.patch(
   [param("requestId").isMongoId(), body("action").isIn(["approve", "reject"])],
   validate,
   respondToConnectionRequest,
+);
+
+router.delete(
+  "/requests/:requestId",
+  [param("requestId").isMongoId()],
+  validate,
+  cancelConnectionRequest,
 );
 
 router.get(

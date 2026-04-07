@@ -59,13 +59,22 @@ const sendMessage = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Conversation not found" });
   }
 
+  const { content = "", mediaUrl = "", mediaType = "" } = req.body;
+  if (!content.trim() && !mediaUrl) {
+    return res
+      .status(400)
+      .json({ message: "Message content or media is required." });
+  }
+
   const message = await Message.create({
     conversation: conversation._id,
     sender: req.user._id,
-    content: req.body.content,
+    content: content.trim() || (mediaUrl ? "Photo" : ""),
+    mediaUrl,
+    mediaType,
   });
 
-  conversation.lastMessage = req.body.content;
+  conversation.lastMessage = content.trim() || (mediaUrl ? "Photo" : "Media");
   conversation.lastMessageAt = new Date();
   await conversation.save();
 
@@ -81,7 +90,7 @@ const sendMessage = asyncHandler(async (req, res) => {
       actor: req.user._id,
       type: "message",
       title: "New message",
-      message: `${req.user.fullName}: ${req.body.content.slice(0, 80)}`,
+      message: `${req.user.fullName}: ${String(content || mediaType || "Photo").slice(0, 80)}`,
       entityType: "conversation",
       entityId: conversation._id,
     })),
@@ -96,6 +105,8 @@ const sendMessage = asyncHandler(async (req, res) => {
       senderId: req.user._id.toString(),
       senderName: req.user.fullName,
       text: message.content,
+      mediaUrl: message.mediaUrl,
+      mediaType: message.mediaType,
       timestamp: message.createdAt,
     },
   });

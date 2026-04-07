@@ -19,7 +19,14 @@ router.post(
   auth,
   [
     body("title").trim().isLength({ min: 2, max: 200 }),
-    body("fileUrl").trim().isURL(),
+    body("fileUrl")
+      .trim()
+      .custom(
+        (value) =>
+          /^data:[^\s]+;base64,/.test(value) || /^https?:\/\//i.test(value),
+      ),
+    body("subject").trim().isLength({ min: 2, max: 120 }),
+    body("department").trim().isLength({ min: 2, max: 100 }),
     body("category")
       .optional()
       .isIn([

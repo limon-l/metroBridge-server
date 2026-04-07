@@ -1,7 +1,14 @@
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
 const { asyncHandler } = require("../utils/helpers");
-const { createNotification } = require("../utils/notifications");
+const {
+  createNotification,
+  createNotificationsBulk,
+} = require("../utils/notifications");
+const {
+  extractMentionTokens,
+  findMentionRecipients,
+} = require("../utils/mentions");
 
 const addComment = asyncHandler(async (req, res) => {
   const { postId } = req.params;
@@ -31,6 +38,31 @@ const addComment = asyncHandler(async (req, res) => {
       entityType: "post",
       entityId: post._id,
     });
+  }
+
+  const mentionTokens = extractMentionTokens(content);
+  const mentionRecipients = await findMentionRecipients({
+    tokens: mentionTokens,
+    actorId: req.user._id,
+  });
+
+  const postAuthorId = post.author.toString();
+  const filteredMentionRecipients = mentionRecipients.filter(
+    (recipientId) => recipientId !== postAuthorId,
+  );
+
+  if (filteredMentionRecipients.length) {
+    await createNotificationsBulk(
+      filteredMentionRecipients.map((recipient) => ({
+        recipient,
+        actor: req.user._id,
+        type: "mention",
+        title: "You were mentioned in a comment",
+        message: `${req.user.fullName} mentioned you in a comment.`,
+        entityType: "comment",
+        entityId: comment._id,
+      })),
+    );
   }
 
   await comment.populate("author", "fullName role");

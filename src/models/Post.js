@@ -10,6 +10,8 @@ const postSchema = new mongoose.Schema(
     },
     content: { type: String, required: true, trim: true, maxlength: 4000 },
     mediaUrl: { type: String, trim: true },
+    mediaName: { type: String, trim: true, maxlength: 200 },
+    mediaType: { type: String, trim: true, maxlength: 80 },
     reactionCounts: {
       like: { type: Number, default: 0 },
       love: { type: Number, default: 0 },
@@ -31,6 +33,11 @@ const postSchema = new mongoose.Schema(
       },
     ],
     commentsCount: { type: Number, default: 0 },
+    sharedPostId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post",
+      index: true,
+    },
   },
   { timestamps: true },
 );

@@ -18,6 +18,7 @@ const notificationSchema = new mongoose.Schema(
         "system",
         "post_comment",
         "post_reaction",
+        "mention",
         "message",
         "appointment_created",
         "appointment_status_changed",

@@ -6,23 +6,30 @@ const {
   createPost,
   reactToPost,
   removeReaction,
+  listPostReactions,
   deletePost,
 } = require("../controllers/postController");
 const {
   addComment,
   listCommentsByPost,
 } = require("../controllers/commentController");
-const { auth } = require("../middleware/auth");
+const { auth, optionalAuth } = require("../middleware/auth");
 const { validate } = require("../middleware/validate");
 
 const router = express.Router();
 
-router.get("/", listPosts);
+router.get("/", optionalAuth, listPosts);
 
 router.post(
   "/",
   auth,
-  [body("content").trim().isLength({ min: 1, max: 4000 })],
+  [
+    body("content").optional().trim().isLength({ min: 1, max: 4000 }),
+    body("mediaUrl").optional().trim().isLength({ max: 4000 }),
+    body("mediaName").optional().trim().isLength({ max: 200 }),
+    body("mediaType").optional().trim().isLength({ max: 80 }),
+    body("sharedPostId").optional().isMongoId(),
+  ],
   validate,
   createPost,
 );
@@ -52,6 +59,14 @@ router.delete(
   [param("postId").isMongoId()],
   validate,
   removeReaction,
+);
+
+router.get(
+  "/:postId/reactions",
+  auth,
+  [param("postId").isMongoId()],
+  validate,
+  listPostReactions,
 );
 
 router.get(

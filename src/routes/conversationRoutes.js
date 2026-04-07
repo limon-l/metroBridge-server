@@ -34,7 +34,9 @@ router.post(
   "/:conversationId/messages",
   [
     param("conversationId").isMongoId(),
-    body("content").trim().isLength({ min: 1, max: 2000 }),
+    body("content").optional().trim().isLength({ min: 1, max: 2000 }),
+    body("mediaUrl").optional().trim().isLength({ max: 4000 }),
+    body("mediaType").optional().trim().isLength({ max: 40 }),
   ],
   validate,
   sendMessage,

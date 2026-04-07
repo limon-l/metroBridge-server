@@ -30,4 +30,22 @@ const requireRoles =
     return next();
   };
 
-module.exports = { auth, requireRoles };
+const optionalAuth = asyncHandler(async (req, res, next) => {
+  const authorization = req.headers.authorization || "";
+  const [scheme, token] = authorization.split(" ");
+
+  if (scheme === "Bearer" && token) {
+    try {
+      const decoded = verifyJwt(token);
+      const user = await User.findById(decoded.sub).select("-password");
+      if (user && user.isActive) {
+        req.user = user;
+      }
+    } catch (error) {
+      // Silently fail - user will be undefined
+    }
+  }
+  return next();
+});
+
+module.exports = { auth, optionalAuth, requireRoles };

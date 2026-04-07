@@ -33,13 +33,26 @@ const listDocuments = asyncHandler(async (req, res) => {
 });
 
 const createDocument = asyncHandler(async (req, res) => {
-  const { title, description, category, fileUrl } = req.body;
+  const {
+    title,
+    description,
+    category,
+    subject,
+    department,
+    fileUrl,
+    fileName,
+    fileType,
+  } = req.body;
 
   const document = await Document.create({
     title,
     description,
     category,
+    subject,
+    department,
     fileUrl,
+    fileName,
+    fileType,
     uploadedBy: req.user._id,
   });
 

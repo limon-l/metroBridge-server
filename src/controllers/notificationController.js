@@ -12,7 +12,7 @@ const listMyNotifications = asyncHandler(async (req, res) => {
   const [items, total, unreadCount] = await Promise.all([
     Notification.find(filter)
       .populate("actor", "fullName role")
-      .sort({ createdAt: -1 })
+      .sort({ isRead: 1, createdAt: -1 })
       .skip(skip)
       .limit(limit),
     Notification.countDocuments(filter),

@@ -194,6 +194,31 @@ const respondToConnectionRequest = asyncHandler(async (req, res) => {
   });
 });
 
+const cancelConnectionRequest = asyncHandler(async (req, res) => {
+  const request = await ConnectionRequest.findById(req.params.requestId);
+
+  if (!request) {
+    return res.status(404).json({ message: "Connection request not found." });
+  }
+
+  if (String(request.requester) !== String(req.user._id)) {
+    return res.status(403).json({ message: "Only requester can cancel." });
+  }
+
+  if (request.status !== "pending") {
+    return res
+      .status(400)
+      .json({ message: "Only pending requests can be cancelled." });
+  }
+
+  await request.deleteOne();
+
+  return res.status(200).json({
+    message: "Connection request cancelled.",
+    data: { requestId: req.params.requestId },
+  });
+});
+
 const getMemberProfile = asyncHandler(async (req, res) => {
   const member = await User.findById(req.params.memberId)
     .select(
@@ -278,6 +303,7 @@ module.exports = {
   sendConnectionRequest,
   listConnectionRequests,
   respondToConnectionRequest,
+  cancelConnectionRequest,
   getMemberProfile,
   disconnectMember,
   reportMember,

@@ -16,7 +16,11 @@ const documentSchema = new mongoose.Schema(
       default: "resources",
       index: true,
     },
+    subject: { type: String, trim: true, maxlength: 120, index: true },
+    department: { type: String, trim: true, maxlength: 100, index: true },
     fileUrl: { type: String, required: true, trim: true },
+    fileName: { type: String, trim: true, maxlength: 200 },
+    fileType: { type: String, trim: true, maxlength: 80 },
     uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

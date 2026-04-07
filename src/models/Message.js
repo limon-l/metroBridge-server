@@ -14,6 +14,8 @@ const messageSchema = new mongoose.Schema(
       required: true,
     },
     content: { type: String, required: true, trim: true, maxlength: 2000 },
+    mediaUrl: { type: String, trim: true, maxlength: 4000 },
+    mediaType: { type: String, trim: true, maxlength: 40 },
   },
   { timestamps: true },
 );
