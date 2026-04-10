@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema(
     emergencyContactPhone: { type: String, trim: true },
     guardianName: { type: String, trim: true },
     guardianPhone: { type: String, trim: true },
+    profilePhoto: { type: String, trim: true },
     expertise: [{ type: String, trim: true }],
     projects: [{ type: String, trim: true }],
     thesis: { type: String, trim: true, maxlength: 300 },

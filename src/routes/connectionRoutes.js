@@ -10,6 +10,8 @@ const {
   getMemberProfile,
   disconnectMember,
   reportMember,
+  listMemberReports,
+  reviewMemberReport,
 } = require("../controllers/connectionController");
 const { auth, requireRoles } = require("../middleware/auth");
 const { validate } = require("../middleware/validate");
@@ -81,6 +83,32 @@ router.post(
   ],
   validate,
   reportMember,
+);
+
+router.get(
+  "/reports",
+  requireRoles("admin"),
+  [
+    query("status")
+      .optional()
+      .isIn(["pending", "reviewing", "resolved", "rejected"]),
+    query("q").optional().trim().isLength({ max: 100 }),
+    query("limit").optional().isInt({ min: 1, max: 100 }),
+  ],
+  validate,
+  listMemberReports,
+);
+
+router.patch(
+  "/reports/:reportId/review",
+  requireRoles("admin"),
+  [
+    param("reportId").isMongoId(),
+    body("action").isIn(["review", "approve", "reject", "ban"]),
+    body("note").optional().trim().isLength({ max: 500 }),
+  ],
+  validate,
+  reviewMemberReport,
 );
 
 module.exports = router;

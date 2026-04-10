@@ -24,6 +24,11 @@ const updateMyProfile = asyncHandler(async (req, res) => {
     "guardianPhone",
     "bio",
     "expertise",
+    "projects",
+    "thesis",
+    "jobDetails",
+    "educationDetails",
+    "profilePhoto",
   ];
   const updates = {};
 

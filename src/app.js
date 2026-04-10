@@ -20,6 +20,9 @@ const documentRoutes = require("./routes/documentRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 const connectionRoutes = require("./routes/connectionRoutes");
+const classroomRoutes = require("./routes/classroomRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
+const submissionRoutes = require("./routes/submissionRoutes");
 
 const app = express();
 
@@ -82,6 +85,9 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/connections", connectionRoutes);
+app.use("/api/classrooms", classroomRoutes);
+app.use("/api/assignments", assignmentRoutes);
+app.use("/api/submissions", submissionRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

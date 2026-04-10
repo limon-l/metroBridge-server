@@ -15,6 +15,29 @@ const memberReportSchema = new mongoose.Schema(
       index: true,
     },
     reason: { type: String, trim: true, maxlength: 500, required: true },
+    category: {
+      type: String,
+      enum: ["chat", "resource", "profile", "other"],
+      default: "other",
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "reviewing", "resolved", "rejected"],
+      default: "pending",
+      index: true,
+    },
+    adminDecision: {
+      type: String,
+      enum: ["none", "approve", "reject", "ban"],
+      default: "none",
+    },
+    adminNote: { type: String, trim: true, maxlength: 500 },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    reviewedAt: { type: Date },
   },
   { timestamps: true },
 );

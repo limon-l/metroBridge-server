@@ -3,6 +3,13 @@ const MemberReport = require("../models/MemberReport");
 const User = require("../models/User");
 const { asyncHandler } = require("../utils/helpers");
 
+const buildReportPriority = (reason = "") => {
+  const text = String(reason).toLowerCase();
+  if (/(hate|threat|abuse|harass|violence|scam)/.test(text)) return "high";
+  if (/(spam|fake|offensive|inappropriate)/.test(text)) return "medium";
+  return "low";
+};
+
 const getMemberDirectory = asyncHandler(async (req, res) => {
   const { q, role } = req.query;
 
@@ -289,12 +296,125 @@ const reportMember = asyncHandler(async (req, res) => {
 
   await MemberReport.findOneAndUpdate(
     { reporter: req.user._id, reportedUser: req.params.memberId },
-    { reporter: req.user._id, reportedUser: req.params.memberId, reason },
+    {
+      reporter: req.user._id,
+      reportedUser: req.params.memberId,
+      reason,
+      status: "pending",
+      adminDecision: "none",
+      reviewedBy: null,
+      reviewedAt: null,
+      adminNote: "",
+    },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
   return res.status(200).json({
     message: "Report submitted. Thank you for helping keep the community safe.",
+  });
+});
+
+const listMemberReports = asyncHandler(async (req, res) => {
+  const { status, q, limit = 50 } = req.query;
+
+  const filter = {};
+  if (
+    status &&
+    ["pending", "reviewing", "resolved", "rejected"].includes(status)
+  ) {
+    filter.status = status;
+  }
+
+  if (q) {
+    filter.reason = { $regex: q, $options: "i" };
+  }
+
+  const cappedLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+
+  const reports = await MemberReport.find(filter)
+    .populate("reporter", "fullName email role")
+    .populate("reportedUser", "fullName email role approvalStatus isActive")
+    .populate("reviewedBy", "fullName")
+    .sort({ createdAt: -1 })
+    .limit(cappedLimit)
+    .lean();
+
+  const summary = {
+    pending: 0,
+    reviewing: 0,
+    resolved: 0,
+    rejected: 0,
+    highPriority: 0,
+  };
+
+  reports.forEach((item) => {
+    if (summary[item.status] !== undefined) {
+      summary[item.status] += 1;
+    }
+
+    if (buildReportPriority(item.reason) === "high") {
+      summary.highPriority += 1;
+    }
+  });
+
+  return res.status(200).json({
+    data: reports.map((item) => ({
+      ...item,
+      priority: buildReportPriority(item.reason),
+    })),
+    meta: {
+      summary,
+      count: reports.length,
+    },
+  });
+});
+
+const reviewMemberReport = asyncHandler(async (req, res) => {
+  const { action, note = "" } = req.body;
+  const report = await MemberReport.findById(req.params.reportId);
+
+  if (!report) {
+    return res.status(404).json({ message: "Report not found." });
+  }
+
+  if (action === "review") {
+    report.status = "reviewing";
+    report.adminDecision = "none";
+  } else if (action === "approve") {
+    report.status = "resolved";
+    report.adminDecision = "approve";
+  } else if (action === "reject") {
+    report.status = "rejected";
+    report.adminDecision = "reject";
+  } else if (action === "ban") {
+    report.status = "resolved";
+    report.adminDecision = "ban";
+
+    const reportedUser = await User.findById(report.reportedUser);
+    if (reportedUser) {
+      reportedUser.approvalStatus = "banned";
+      reportedUser.isActive = false;
+      await reportedUser.save();
+    }
+  }
+
+  report.adminNote = note;
+  report.reviewedBy = req.user._id;
+  report.reviewedAt = new Date();
+  await report.save();
+
+  const updated = await MemberReport.findById(report._id)
+    .populate("reporter", "fullName email role")
+    .populate("reportedUser", "fullName email role approvalStatus isActive")
+    .populate("reviewedBy", "fullName")
+    .lean();
+
+  return res.status(200).json({
+    message: "Report updated successfully.",
+    data: {
+      ...updated,
+      priority: buildReportPriority(updated.reason),
+    },
   });
 });
 
@@ -307,4 +427,6 @@ module.exports = {
   getMemberProfile,
   disconnectMember,
   reportMember,
+  listMemberReports,
+  reviewMemberReport,
 };
