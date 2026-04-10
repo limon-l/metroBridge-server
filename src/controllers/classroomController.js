@@ -22,7 +22,7 @@ function generateJoinCode(length = 6) {
 
 function sanitizeClassroomForRole(classroom, role) {
   const data = classroom.toObject ? classroom.toObject() : { ...classroom };
-  if (role === "student") {
+  if (role !== "mentor") {
     delete data.joinCode;
   }
   return data;
@@ -219,16 +219,49 @@ const createClassroomMaterial = asyncHandler(async (req, res) => {
     return res.status(403).json({ message: "Forbidden" });
   }
 
+  let fileUrl = String(req.body.fileUrl || "").trim();
+  if (req.file) {
+    fileUrl = `${req.protocol}://${req.get("host")}/uploads/classroom-materials/${req.file.filename}`;
+  }
+
+  if (!fileUrl) {
+    return res
+      .status(400)
+      .json({ message: "Upload a file or provide a valid fileUrl" });
+  }
+
   const material = await ClassroomMaterial.create({
     classroom: classroom._id,
     uploader: req.user._id,
     title: req.body.title,
     description: req.body.description || "",
-    fileUrl: req.body.fileUrl,
+    fileUrl,
+    fileName: req.file?.originalname || undefined,
+    fileType: req.file?.mimetype || undefined,
+    fileSize: req.file?.size || undefined,
   });
 
   await material.populate("uploader", "fullName role department");
   return res.status(201).json({ data: material });
+});
+
+const deleteClassroomMaterial = asyncHandler(async (req, res) => {
+  const material = await ClassroomMaterial.findById(req.params.materialId);
+  if (!material) {
+    return res.status(404).json({ message: "Material not found" });
+  }
+
+  const classroom = await Classroom.findById(material.classroom);
+  if (!classroom) {
+    return res.status(404).json({ message: "Classroom not found" });
+  }
+
+  if (!ensureClassroomOwnerOrAdmin(classroom, req.user)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  await ClassroomMaterial.findByIdAndDelete(req.params.materialId);
+  return res.status(200).json({ message: "Material deleted successfully" });
 });
 
 const listClassroomNotices = asyncHandler(async (req, res) => {
@@ -343,6 +376,7 @@ module.exports = {
   listClassroomStudents,
   listClassroomMaterials,
   createClassroomMaterial,
+  deleteClassroomMaterial,
   listClassroomNotices,
   createClassroomNotice,
   cloneClassroom,

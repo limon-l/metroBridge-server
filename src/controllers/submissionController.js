@@ -64,11 +64,26 @@ const upsertMySubmission = asyncHandler(async (req, res) => {
 
   const textSubmission = String(req.body.textSubmission || "").trim();
   const fileUrl = String(req.body.fileUrl || "").trim();
+  let submissionFileUrl = fileUrl;
+  let fileName = null;
+  let fileType = null;
+  let fileSize = null;
 
-  if (!textSubmission && !fileUrl) {
-    return res
-      .status(400)
-      .json({ message: "Either textSubmission or fileUrl is required" });
+  // Handle file upload
+  if (req.file) {
+    const protocol = req.protocol;
+    const host = req.get("host");
+    const filePath = req.file.filename;
+    submissionFileUrl = `${protocol}://${host}/uploads/submissions/${filePath}`;
+    fileName = req.file.originalname;
+    fileType = req.file.mimetype;
+    fileSize = req.file.size;
+  }
+
+  if (!textSubmission && !submissionFileUrl) {
+    return res.status(400).json({
+      message: "Either textSubmission or a file upload is required",
+    });
   }
 
   const existingSubmission = await Submission.findOne({
@@ -88,7 +103,10 @@ const upsertMySubmission = asyncHandler(async (req, res) => {
     classroom: assignment.classroom,
     student: req.user._id,
     textSubmission,
-    fileUrl,
+    fileUrl: submissionFileUrl,
+    fileName,
+    fileType,
+    fileSize,
     submittedAt: new Date(),
     status: "submitted",
   });
@@ -129,6 +147,52 @@ const getMySubmission = asyncHandler(async (req, res) => {
   });
 
   return res.status(200).json({ data: submission });
+});
+
+const withdrawMySubmission = asyncHandler(async (req, res) => {
+  if (req.user.role !== "student") {
+    return res
+      .status(403)
+      .json({ message: "Only students can withdraw submission" });
+  }
+
+  const assignment = await Assignment.findById(req.params.assignmentId);
+  if (!assignment) {
+    return res.status(404).json({ message: "Assignment not found" });
+  }
+
+  const enrolled = await isStudentEnrolled({
+    classroomId: assignment.classroom,
+    studentId: req.user._id,
+  });
+
+  if (!enrolled) {
+    return res
+      .status(403)
+      .json({ message: "You are not enrolled in this classroom" });
+  }
+
+  if (new Date() > new Date(assignment.dueDate)) {
+    return res
+      .status(400)
+      .json({ message: "Deadline passed. You cannot withdraw now." });
+  }
+
+  const submission = await Submission.findOne({
+    assignment: assignment._id,
+    student: req.user._id,
+  });
+
+  if (!submission) {
+    return res.status(404).json({ message: "Submission not found" });
+  }
+
+  await submission.deleteOne();
+
+  return res.status(200).json({
+    message: "Submission withdrawn successfully",
+    data: { assignmentId: assignment._id.toString() },
+  });
 });
 
 const listAssignmentSubmissions = asyncHandler(async (req, res) => {
@@ -182,6 +246,7 @@ module.exports = {
   listMyClassroomSubmissions,
   upsertMySubmission,
   getMySubmission,
+  withdrawMySubmission,
   listAssignmentSubmissions,
   gradeSubmission,
 };

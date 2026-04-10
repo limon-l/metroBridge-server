@@ -22,6 +22,9 @@ const submissionSchema = new mongoose.Schema(
     },
     textSubmission: { type: String, trim: true, maxlength: 10000 },
     fileUrl: { type: String, trim: true, maxlength: 2048 },
+    fileName: { type: String, trim: true, maxlength: 255 },
+    fileType: { type: String, trim: true, maxlength: 100 },
+    fileSize: { type: Number, min: 0 },
     submittedAt: { type: Date, default: Date.now },
     status: {
       type: String,

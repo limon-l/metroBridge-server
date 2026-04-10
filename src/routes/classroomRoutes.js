@@ -9,6 +9,7 @@ const {
   listClassroomStudents,
   listClassroomMaterials,
   createClassroomMaterial,
+  deleteClassroomMaterial,
   listClassroomNotices,
   createClassroomNotice,
   cloneClassroom,
@@ -21,6 +22,7 @@ const {
   listMyClassroomSubmissions,
 } = require("../controllers/submissionController");
 const { auth } = require("../middleware/auth");
+const { uploadClassroomMaterial } = require("../middleware/upload");
 const { validate } = require("../middleware/validate");
 
 const router = express.Router();
@@ -83,6 +85,7 @@ router.get(
 
 router.post(
   "/:classroomId/assignments",
+  uploadClassroomMaterial.single("file"),
   [
     param("classroomId").isMongoId(),
     body("title").trim().isLength({ min: 2, max: 200 }),
@@ -103,14 +106,22 @@ router.get(
 
 router.post(
   "/:classroomId/materials",
+  uploadClassroomMaterial.single("file"),
   [
     param("classroomId").isMongoId(),
     body("title").trim().isLength({ min: 2, max: 200 }),
     body("description").optional().trim().isLength({ max: 2000 }),
-    body("fileUrl").trim().isLength({ min: 5, max: 2048 }),
+    body("fileUrl").optional().trim().isLength({ min: 5, max: 2048 }),
   ],
   validate,
   createClassroomMaterial,
+);
+
+router.delete(
+  "/:classroomId/materials/:materialId",
+  [param("classroomId").isMongoId(), param("materialId").isMongoId()],
+  validate,
+  deleteClassroomMaterial,
 );
 
 router.get(
