@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const http = require("http");
+
 const app = require("./src/app");
 const { connectDatabase } = require("./src/config/database");
 const { logger } = require("./src/config/logger");
@@ -24,19 +25,25 @@ server.on("error", (error) => {
 
 const startServer = async () => {
   try {
-    await connectDatabase();
-
-    server.listen(env.port, () => {
-      logger.info(`API running on http://localhost:${env.port}`);
-    });
+    await connectDatabase({ retries: 5, retryDelayMs: 1500 });
   } catch (error) {
-    logger.error("Server startup failed", error);
-    process.exit(1);
+    logger.warn(
+      "MongoDB connection could not be established. Starting server in degraded mode.",
+    );
   }
+
+  server.listen(env.port, () => {
+    logger.info(`API running on http://localhost:${env.port}`);
+  });
 };
 
 process.on("SIGINT", () => {
   logger.info("SIGINT received, shutting down gracefully.");
+  server.close(() => process.exit(0));
+});
+
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM received, shutting down gracefully.");
   server.close(() => process.exit(0));
 });
 

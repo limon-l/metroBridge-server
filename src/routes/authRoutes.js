@@ -11,8 +11,25 @@ const {
 const { validate } = require("../middleware/validate");
 const { auth } = require("../middleware/auth");
 const { authRateLimiter } = require("../middleware/rateLimiter");
+const { syncFirebaseUser } = require("../controllers/gatewayController");
 
 const router = express.Router();
+
+router.post(
+  "/sync",
+  authRateLimiter,
+  [
+    body("firebaseToken").optional().isString(),
+    body("name").optional().trim().isLength({ min: 2, max: 120 }),
+    body("email").optional().trim().isEmail(),
+    body("role").optional().isIn(["Student", "Mentor", "Admin"]),
+    body("department").optional().trim().isLength({ max: 120 }),
+    body("skills").optional().isArray(),
+    body("bio").optional().trim().isLength({ max: 1000 }),
+  ],
+  validate,
+  syncFirebaseUser,
+);
 
 router.post(
   "/register",

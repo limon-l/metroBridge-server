@@ -6,11 +6,14 @@ const compression = require("compression");
 const morgan = require("morgan");
 
 const { env } = require("./config/env");
+const { corsOptions } = require("./config/cors");
 const { requestLoggerStream } = require("./config/logger");
 const { apiRateLimiter } = require("./middleware/rateLimiter");
 const { notFoundHandler, errorHandler } = require("./middleware/errorHandler");
 
 const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const courseRoutes = require("./routes/courseRoutes");
 const userRoutes = require("./routes/userRoutes");
 const mentorRoutes = require("./routes/mentorRoutes");
 const postRoutes = require("./routes/postRoutes");
@@ -26,28 +29,6 @@ const assignmentRoutes = require("./routes/assignmentRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
 
 const app = express();
-
-const allowedOrigins = new Set([
-  ...env.clientUrls,
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5174",
-  "http://localhost:5175",
-  "http://127.0.0.1:5175",
-]);
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.has(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
-  credentials: true,
-};
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
@@ -77,6 +58,8 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/courses", courseRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/mentors", mentorRoutes);
 app.use("/api/posts", postRoutes);
